@@ -1,0 +1,123 @@
+WITH
+-- 识别所有 MRSA 阳性患者及其第一次阳性检测的住院记录
+mrsa_anchor AS (
+    WITH ranked_mrsa AS (
+        SELECT
+            m.subject_id,
+            m.hadm_id,
+            m.chartdate AS anchor_time,
+            m.org_name,
+            m.ab_name,
+            m.interpretation,
+            ROW_NUMBER() OVER (PARTITION BY m.subject_id ORDER BY m.chartdate) as rn
+        FROM mimiciv_hosp.microbiologyevents m
+        WHERE
+            (m.org_name ~* 'staph.*aureus.*coag.*\+'
+            OR m.org_name ~* 'mrsa.*(negative|positive)'
+            OR m.org_name ~* 's\.?aureus.*(negative|positive)'
+            OR m.org_name ~* 'positive.*for.*methicillin.*resistant.*staph.*aureus')
+            AND (m.ab_name ~* 'methicillin|oxacillin|meticillin')
+            AND (m.interpretation ~* 'r|resistant')
+            AND m.test_name IN (
+                'ACID FAST CULTURE','AEROBIC BOTTLE','ANAEROBIC BOTTLE','ANAEROBIC CULTURE',
+                'Anaerobic culture, Prosthetic Joint Fluid','BARTONELLA BLOOD CULTURE',
+                'BLOOD/AFB CULTURE','BLOOD/FUNGAL CULTURE','BRUCELLA BLOOD CULTURE',
+                'BRUCELLA CULTURE','Blood Culture, Neonate','Blood Culture, Post Mortem',
+                'Blood Culture, Routine','CAMPYLOBACTER CULTURE','CHLAMYDIA CULTURE',
+                'FECAL CULTURE','FECAL CULTURE - R/O E.COLI 0157:H7','FECAL CULTURE - R/O VIBRIO',
+                'FECAL CULTURE - R/O YERSINIA','FLUID CULTURE','Fluid Culture in Bottles',
+                'GENITAL CULTURE','GENITAL CULTURE FOR TOXIC SHOCK','ISOLATE FOR MIC',
+                'LEGIONELLA CULTURE','NOCARDIA CULTURE','POST-MORTEM ACID-FAST CULTURE',
+                'POSTMORTEM CULTURE','REFLEX URINE CULTURE','RESPIRATORY CULTURE',
+                'Sonication culture, prosthetic joint','TISSUE','TISSUE CULTURE-AMNIOTIC FLUID',
+                'TISSUE CULTURE-CVS','TISSUE CULTURE-FLUID','TISSUE CULTURE-LYMPHOCYTE',
+                'TISSUE CULTURE-TISSUE','Tissue Culture - Neoplastic Blood','Tissue Culture-Bone Marrow',
+                'Tissue culture for additional cells','URINE CULTURE','WOUND CULTURE'
+            )
+			and hadm_id is not null
+    )
+    SELECT
+        subject_id,
+        hadm_id,
+        anchor_time,
+        org_name,
+        ab_name,
+        interpretation
+    FROM ranked_mrsa
+    WHERE rn = 1  -- 只选择每个患者的第一次MRSA检测
+),
+
+-- 人口统计信息
+correct_demographics AS (
+    SELECT DISTINCT ON (p.subject_id)
+        p.subject_id,
+        p.gender,
+        a.race,
+        a.marital_status,
+        p.anchor_age
+    FROM mimiciv_hosp.patients p
+    JOIN mrsa_anchor ma ON p.subject_id = ma.subject_id
+    JOIN mimiciv_hosp.admissions a
+        ON ma.hadm_id = a.hadm_id
+    ORDER BY p.subject_id, a.admittime DESC
+),
+
+-- 统一记录：诊断 + 临床笔记
+unified_records AS (
+  -- 诊断数据部分
+  SELECT
+    ma.subject_id,
+    ma.hadm_id,
+    ma.anchor_time,
+    d.gender,
+    d.race,
+    d.marital_status,
+    d.anchor_age,
+    diag.icd_version::text,
+    diag.icd_code,
+    diag.seq_num::text,
+    dx.long_title AS diagnosis_description,
+    adm.admittime AS event_time,
+    NULL::text AS note_snippet,
+    'Diagnosis' AS record_type
+  FROM mrsa_anchor ma
+  JOIN correct_demographics d ON ma.subject_id = d.subject_id
+  JOIN mimiciv_hosp.admissions adm
+    ON ma.hadm_id = adm.hadm_id  -- 只关联MRSA检测的hadm_id
+  JOIN mimiciv_hosp.diagnoses_icd diag ON adm.hadm_id = diag.hadm_id
+  JOIN mimiciv_hosp.d_icd_diagnoses dx
+    ON diag.icd_code = dx.icd_code
+    AND diag.icd_version = dx.icd_version
+
+  UNION ALL
+
+  -- 临床笔记数据部分
+  SELECT
+    ma.subject_id,
+    ma.hadm_id,
+    ma.anchor_time,
+    d.gender,
+    d.race,
+    d.marital_status,
+    d.anchor_age,
+    NULL::text AS icd_version,
+    NULL::text AS icd_code,
+    NULL::text AS seq_num,
+    NULL::text AS diagnosis_description,
+    n.charttime AS event_time,
+    n.text AS note_snippet,
+    'Clinical Note' AS record_type
+  FROM mrsa_anchor ma
+  JOIN correct_demographics d ON ma.subject_id = d.subject_id
+  JOIN mimiciv_hosp.admissions adm
+    ON ma.hadm_id = adm.hadm_id  -- 关联MRSA检测的hadm_id
+  JOIN mimiciv_note.radiology n
+    ON ma.subject_id = n.subject_id
+    AND n.charttime BETWEEN adm.admittime AND adm.dischtime  -- 只选择住院期间的笔记
+
+)
+
+-- 最终结果
+SELECT *
+FROM unified_records
+;

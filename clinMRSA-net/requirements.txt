@@ -1,0 +1,14 @@
+huggingface-hub==0.30.2
+matplotlib==3.10.0
+numpy
+pandas
+scikit-learn
+scipy==1.10.1
+seaborn
+tokenizers==0.21.1
+torch==2.5.1
+torch-geometric==2.6.1
+torchaudio==2.5.1
+torchvision==0.20.1
+tqdm==4.67.1
+transformers==4.51.3
