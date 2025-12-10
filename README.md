@@ -73,8 +73,11 @@ Other Key Configurations: max_seq_length (text sequence length), reports_flag (w
 ## Core Preprocessing Details
 
 ICD Encoding: Distinguish between ICD-9/10 versions, map to [version, main code, subcode] triplets via hash mapping, and encode into 13-bit binary vectors
+
 Text Processing: Concatenate structured diagnostic descriptions and unstructured notes, split using a sliding window (256-character step, 512-token maximum length), encode with ClinicalBERT, and aggregate [CLS] tokens via weighted averaging (equal weights)
+
 Structured Features: Calculate day differences between each event and the first diagnosis date, discretize into 5 clinically meaningful bins, one-hot encode, and concatenate with ICD features and sequence numbers
+
 Image Processing: Resize/crop/normalize chest X-rays, aggregate tensors for multiple images per patient via averaging (feature extraction with lightweight CNN)
 
 ## Common Configurations 
@@ -94,9 +97,11 @@ Config.output_dir	Directory for saving models, metrics, and prediction results
 ## Training and Validation
 
 Adjust Training Configurations (config_mul.py):
+
 Data Splitting: Stratified 9:1 split into training/validation sets (preserving positive/negative sample ratio)
 Model Saving: Validate every 10 epochs, save the best AUC model to output_dir/best_model.pth
 Result Logging:
+
 Per-epoch prediction results: train_predictions_epoch_*.csv / val_predictions_epoch_*.csv
 Full metric log: output_dir/training_metrics.csv (includes AUC, Accuracy, Precision, Recall, F1, NPV, Specificity, Loss)
 Training Optimization: AdamW optimizer + AMP mixed-precision training, supports multi-GPU parallelism (nn.DataParallel)
