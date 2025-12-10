@@ -1,9 +1,10 @@
 clinMRSA: MRSA Risk Prediction Based on Electronic Health Records and Medical Imaging
-![flow_chart](img/MRSA_flow.tiff)
+![flow_chart](/clinMRSA/img/MRSA_flow.tiff)
 
 Project Goal: Develop an end-to-end multimodal model by fusing structured medical records, clinical text, and chest X-ray images for predicting Methicillin-Resistant Staphylococcus Aureus (MRSA) infection risk. The code uses data from the MIMIC database (MIMIC-IV + MIMIC-CXR) as an example, and by default relies on a GPU environment and local pre-trained weights of Clinical BERT  
 
-## 目录结构（关键部分）
+## Directory Structure
+```
 clinMRSA/
 ├── config_mul.py          # Training hyperparameters, data paths, model configurations
 ├── run.py                 # Training entry point (data splitting, logging, model saving)
@@ -22,7 +23,7 @@ clinMRSA/
 ├── output/                 # Training output directory (auto-generated)
 │   ├── best_model.pth      # Best AUC model
 │   ├── training_metrics.csv # Full training metrics
-
+```
 ## Environment and Dependencies
 
 1) System Requirements: Python 3.10+, GPU (NVIDIA A6000 or higher recommended, with CUDA compatible with the PyTorch version)
