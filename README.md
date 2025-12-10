@@ -38,11 +38,17 @@ Place ClinicalBERT model files in hf_models/ClinicalBert/ (path must match confi
 ## Data Source and Cohort Selection
 
 Data for this project is sourced from the MIMIC-IV (electronic health records) and MIMIC-CXR (chest X-ray images/reports) databases. The patient selection process is as follows:
+
 Initially include 364,627 patients from the MIMIC-IV database
+
 Filter patients with definitive microbiological culture results (222,313 patients)
+
 Retain patients with documented hospitalization records (108,226 patients), stratified into two groups based on culture findings:
+
 MRSA-positive group (n=3,279)
+
 MRSA-negative group (n=104,947) (used for first-stage model training)
+
 From a subset of 23,357 patients diagnosed with pneumonia, identify those with available chest X-rays by linking to the MIMIC-CXR database (used for second-stage model development)
 
 ## Data Preparation Workflow
