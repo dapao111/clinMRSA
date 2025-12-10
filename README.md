@@ -60,7 +60,7 @@ jpg_paths: Chest X-ray image file paths (stored as a list for multiple images)
 cxr_reports: Chest X-ray report text (optional)
 
 2）Modify Configuration File (config_mul.py):
-case_path / control_path: Paths to pickled files of positive/negative samples in raw_data/
+case_path/control_path: Paths to pickled files of positive/negative samples in raw_data/
 data_path: Output directory for preprocessed .npy files (auto-created)
 bert_model: Path to ClinicalBERT model directory (default: hf_models/ClinicalBert/)
 Other Key Configurations: max_seq_length (text sequence length), reports_flag (whether to merge chest X-ray reports), etc.
@@ -73,10 +73,11 @@ Other Key Configurations: max_seq_length (text sequence length), reports_flag (w
 
 ICD Encoding: Distinguish between ICD-9/10 versions, map to [version, main code, subcode] triplets via hash mapping, and encode into 13-bit binary vectors
 Text Processing: Concatenate structured diagnostic descriptions and unstructured notes, split using a sliding window (256-character step, 512-token maximum length), encode with ClinicalBERT, and aggregate [CLS] tokens via weighted averaging (equal weights)
-Structured Features: Calculate day differences between each event and the first diagnosis date, discretize into 5 clinically meaningful bins (<30/30-180/180-365/365-730/>730 days), one-hot encode, and concatenate with ICD features and sequence numbers
-Image Processing: Resize/crop/normalize chest X-rays, aggregate tensors for multiple images per patient via averaging (feature extraction with lightweight CNN or Swin)
+Structured Features: Calculate day differences between each event and the first diagnosis date, discretize into 5 clinically meaningful bins, one-hot encode, and concatenate with ICD features and sequence numbers
+Image Processing: Resize/crop/normalize chest X-rays, aggregate tensors for multiple images per patient via averaging (feature extraction with lightweight CNN)
 
 ## Common Configurations 
+```
 Configuration Item	Function Description
 Config.case_path	Path to MRSA-positive sample file (pickled DataFrame containing clinical records and image paths)
 Config.control_path	Path to MRSA-negative sample file (pickled DataFrame with matched control cohort data)
@@ -88,8 +89,8 @@ Config.reports_flag	When True, merge chest X-ray report text into clinical text 
 Config.max_seq_length	Control truncation/padding length for temporal records per patient (avoid GPU memory overflow)
 Config.seed	Random seed for reproducibility (default: 4166)
 Config.output_dir	Directory for saving models, metrics, and prediction results
-
-##Training and Validation
+```
+## Training and Validation
 
 Adjust Training Configurations (config_mul.py):
 Data Splitting: Stratified 9:1 split into training/validation sets (preserving positive/negative sample ratio)
