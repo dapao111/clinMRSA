@@ -1,5 +1,6 @@
 clinMRSA: MRSA Risk Prediction Based on Electronic Health Records and Medical Imaging
-![flow_chart](/clinMRSA/img/MRSA_flow.tiff)
+![flow_chart]<img width="2792" height="1712" alt="image" src="https://github.com/user-attachments/assets/72dd507b-cfdc-49d1-916f-a228b627281a" />
+
 
 Project Goal: Develop an end-to-end multimodal model by fusing structured medical records, clinical text, and chest X-ray images for predicting Methicillin-Resistant Staphylococcus Aureus (MRSA) infection risk. The code uses data from the MIMIC database (MIMIC-IV + MIMIC-CXR) as an example, and by default relies on a GPU environment and local pre-trained weights of Clinical BERT  
 
